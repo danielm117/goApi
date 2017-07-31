@@ -6,62 +6,15 @@ import (
 	"net/http"
 	"log"
 	"encoding/json"
-	"strconv"
 	"fmt"
 	"regexp"
 )
 
-type Note struct {
-		Title string `json:"title"`
-		Description string `json:"description"`
-		CreateAt time.Time `json:"create_at"`
-}
 type Game struct {
 		Board string `json:"board"`
 		Player string `json:"player"`
 }
-type Error struct {
-		Error string `json:"error"`
-}
 
-var noteStore = make(map[string]Note)
-
-var id int
-
-func GetNoteHandler(w http.ResponseWriter, r *http.Request)  {
-	var notes []Note
-	for _, v := range noteStore {
-			notes = append(notes, v)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	j, err := json.Marshal(notes)
-	if err != nil {
-			panic(err)
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(j)
-
-}
-
-func PostNoteHandler(w http.ResponseWriter, r *http.Request)  {
-	var note Note
-	err := json.NewDecoder(r.Body).Decode(&note)
-	if err != nil {
-			panic(err)
-	}
-	note.CreateAt = time.Now()
-	id++
-	k := strconv.Itoa(id)
-	noteStore[k] = note
-
-	w.Header().Set("Content-Type", "application/json")
-	j, err := json.Marshal(note)
-	if err != nil {
-		panic(err)
-	}
-	w.WriteHeader(http.StatusCreated)
-	w.Write(j)
-}
 func NextMoveHandler(w http.ResponseWriter, r *http.Request)  {
 	var game Game
 	validGame := true
@@ -82,14 +35,14 @@ func NextMoveHandler(w http.ResponseWriter, r *http.Request)  {
 	if matches_w > 12 {
 		validGame = false
 		w.Write([]byte("invalid number of w on board\n"))
-		log.Println("invalid number of w on board\n")
+	//	log.Println("invalid number of w on board\n")
 	}
 	pattern_b := regexp.MustCompile("b")
 	matches_b := len(pattern_b.FindAllStringIndex(game.Board, -1))
 	if matches_b > 12 {
 		validGame = false
 		w.Write([]byte("invalid number of b on board\n"))
-		log.Println("invalid number of b on board\n")
+	//	log.Println("invalid number of b on board\n")
 	}
 	//check pieces distribution
 	j:= 7 //end of row
@@ -123,12 +76,12 @@ func NextMoveHandler(w http.ResponseWriter, r *http.Request)  {
 	if game.Player != "w" && game.Player != "b" {
 		validGame = false
 		w.Write([]byte("invalid player"))
-		log.Println("invalid player")
+	//	log.Println("invalid player")
 	}
 
 	if validGame {
 		w.Write([]byte("valid\n"))
-		log.Println("valid\n")
+	//	log.Println("valid\n")
 	}
 //	w.WriteHeader(http.StatusOK)
 //	w.Write()
@@ -142,8 +95,6 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	r := mux.NewRouter().StrictSlash(false)
 	r.HandleFunc("/", HomeHandler)
-	r.HandleFunc("/api/notes", GetNoteHandler).Methods("GET")
-	r.HandleFunc("/api/notes", PostNoteHandler).Methods("POST")
 	r.HandleFunc("/api/game", NextMoveHandler).Methods("POST")
 
 	server := &http.Server{
